@@ -1,12 +1,18 @@
-# Crea el sistema de registro e inicio de sesion para usuarios
-import sys
 class Usuario:
-    def __init__(self, usuario, contraseña):
+    def __init__(self, usuario, clave):
         self.usuario = usuario
-        self.contraseña = contraseña
+        self.clave = clave
 
-    def cambiar_contraseña():
-        pass
+    # Convierte los datos del usuario a un diccionario para guardar en Firebase
+    def to_dict(self):
+        return {
+            'usuario': self.usuario,
+            'clave': self.clave
+        }
 
-    def agregar_partitura():
-    pass
+    # Crea un usuario a partir de un diccionario (para cargar desde Firebase)
+    def from_dict(self, data):
+        return Usuario(
+            usuario=data['usuario'],
+            clave=data['clave']
+        )

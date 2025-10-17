@@ -1,3 +1,4 @@
 Info/
 .env
 .vscode/
+__pycache__/
