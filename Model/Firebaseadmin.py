@@ -1,8 +1,9 @@
 # FireBase admin
+import sys
 '''import firebase_admin
 from firebase_admin import credentials, db
 from usuario import Usuario
-import sys
+
 from dotenv import load_dotenv
 from domain.account import Usuario
 from presentation.account_vm import CuentaViewModel
@@ -28,7 +29,7 @@ class FireBase():
             self.iniciar_sesion()
         elif opcion == "3" or opcion == "crear cuenta":
             print("Gracias por usar el sistema")
-            exit()
+            sys.exit()
         else:
             print("Opción inválida")
             return
@@ -93,3 +94,6 @@ class FireBase():
         print("Inicio de sesión exitoso")
     def verificar_contraseña(self):
 
+def main():
+    sistema = FireBase()
+    sistema.opciones
