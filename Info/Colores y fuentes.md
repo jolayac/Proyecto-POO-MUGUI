@@ -13,6 +13,10 @@ El color naranja combina la energía y urgencia del rojo con la alegría del ama
 - Amarillo
 Transmite optimismo, claridad, alegría e intelecto. Sin embargo, si se usa en exceso, puede causar fatiga visual, ansiedad o ser aversivo visualmente. Es muy efectivo como color de acento, para captar atención. (wan.io)
 
+#1b1b1b
+#323232
+#fee8d0
+#FC6E20
 2. Uso de tonos neutros
 
     Los tonos neutros (grises, blanco, negro, o gris carbón):
