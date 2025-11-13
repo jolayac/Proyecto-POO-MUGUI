@@ -1,7 +1,7 @@
 import tkinter as tk
 import threading
-from importmusic import MusicImporter
-from detector_notas import DetectorNotas
+from View.importmusic import MusicImporter
+from View.detector_notas import DetectorNotas
 
 root=tk.Tk()
 root.title("MUGUI APP") # Configurar el título de la ventana

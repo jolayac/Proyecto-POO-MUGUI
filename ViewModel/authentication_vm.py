@@ -59,6 +59,7 @@ class AuthenticationViewModel:
 
     def start_google_auth(self, mode: str = "signin"):
         client_id = os.getenv("GOOGLE_OAUTH_CLIENT_ID")
+        client_secret = os.getenv("GOOGLE_OAUTH_CLIENT_SECRET")
         if not client_id:
             if self.on_auth_error:
                 self.on_auth_error("Falta GOOGLE_OAUTH_CLIENT_ID en .env")
@@ -101,8 +102,17 @@ class AuthenticationViewModel:
                         "grant_type": "authorization_code",
                         "redirect_uri": redirect_uri,
                     }
+                    if client_secret:
+                        token_data["client_secret"] = client_secret
                     response = requests.post("https://oauth2.googleapis.com/token", data=token_data)
-                    response.raise_for_status()
+                    if not response.ok:
+                        try:
+                            err = response.json()
+                            msg = err.get("error_description") or err.get("error") or response.text
+                        except Exception:
+                            msg = response.text
+                        self._send_error(f"Error al obtener token: {response.status_code} {msg}")
+                        return
                     token_json = response.json()
 
                     id_token = token_json.get("id_token")
@@ -113,7 +123,7 @@ class AuthenticationViewModel:
                     # Éxito: cerrar servidor y notificar
                     self._send_success()
                     threading.Thread(
-                        target=self._complete_auth,
+                        target=self.server.viewmodel._complete_auth,
                         args=(id_token,),
                         daemon=True
                     ).start()

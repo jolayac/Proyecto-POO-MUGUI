@@ -51,7 +51,7 @@ def main():
     main_window = MuguiMainWindow(root)
 
     # Mostrar splash y luego la ventana principal
-    splash = SplashScreen(root, duration=2500, on_complete=main_window.show)
+    splash = SplashScreen(root, duration=25000, on_complete=main_window.show)
     splash.show()
 
     root.mainloop()

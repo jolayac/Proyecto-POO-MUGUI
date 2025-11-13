@@ -24,12 +24,12 @@ class FirebaseAuthentication:
     def __init__(self):
         self.current_user = None  # Guardará el usuario autenticado
 
-    def sign_in_with_google(self, access_token: str) -> Dict:
+    def sign_in_with_google(self, id_token: str) -> Dict:
         try:
             api_key = firebase_config["apiKey"]
             url = f"https://identitytoolkit.googleapis.com/v1/accounts:signInWithIdp?key={api_key}"
             payload = {
-                "postBody": f"access_token={access_token}&providerId=google.com",
+                "postBody": f"id_token={id_token}&providerId=google.com",
                 "requestUri": "http://localhost",
                 "returnSecureToken": True,
                 "returnIdpCredential": True

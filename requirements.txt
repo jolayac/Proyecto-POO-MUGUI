@@ -3,7 +3,6 @@ python-dotenv>=1.0.0
 pyrebase4>=4.7.1
 firebase-admin>=6.5.0
 sounddevice
-aubio
 librosa
 numpy
-pygam
+pygame
