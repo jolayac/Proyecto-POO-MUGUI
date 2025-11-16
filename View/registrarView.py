@@ -1,7 +1,7 @@
 # view/registrarView.py
 import tkinter as tk
 from tkinter import messagebox
-from ViewModel.authentication_vm import AuthenticationViewModel
+from Info.authentication_vm000 import AuthenticationViewModel
 from dotenv import load_dotenv
 
 

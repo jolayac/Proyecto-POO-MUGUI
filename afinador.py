@@ -5,15 +5,15 @@ Afinador de Guitarra Profesional - POO
 Funcionalidad completa + ultra estable + frecuencia en vivo
 """
 
-import pyaudio
-import numpy as np
-import librosa
 import math
 import time
 import tkinter as tk
 from tkinter import Canvas
 from collections import deque
 import threading
+import pyaudio
+import numpy as np
+import librosa
 
 # ================================
 # CLASE 1: AudioProcessor
@@ -29,7 +29,7 @@ class AudioProcessor:
         self.FORMAT = pyaudio.paInt16
         self.CHANNELS = 1
 
-        self.STABILITY_SEC = 0.35
+        self.STABILITY_SEC = 0.9
         self.ENERGY_SMOOTH = 0.9
         self.MAX_FREQ_VARIATION = 0.015  # 1.5%
 
