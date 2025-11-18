@@ -1,6 +1,6 @@
 import tkinter as tk
 import threading
-from importmusic import MusicImporter
+from View.importmusic import MusicImporter
 from afinador import AudioProcessor
 
 root=tk.Tk()
@@ -188,13 +188,10 @@ def ir_canciones_guardadas():
     mostrar_frame(canciones_guardadas)
 
 def ir_detector_notas():
-    from afinador import lanzar_afinador  # Importamos aquí para evitar import cíclico
+    from ViewModel.TunerApp import TunerApp
 
-    detector_notas_frame = tk.Frame(root, bg="#323232")
-    tk.Label(detector_notas_frame, text="AFINADOR DE GUITARRA", bg="#323232", fg="white", font=("Arial", 18, "bold")).pack(pady=30)
-
-    tk.Label(detector_notas_frame, text="Presiona el botón para abrir el afinador en tiempo real", 
-             bg="#323232", fg="#aaaaaa", font=("Arial", 11)).pack(pady=10)
+    app = TunerApp()
+    app.run()
 
     def abrir_afinador():
         # Abrir afinador en un hilo separado para no congelar la app
