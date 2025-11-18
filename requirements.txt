@@ -6,3 +6,4 @@ sounddevice
 librosa
 numpy
 pygame
+pyaudio
