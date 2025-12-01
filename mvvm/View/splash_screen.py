@@ -6,9 +6,8 @@ from typing import Callable
 class SplashScreen:
     """Clase reutilizable para mostrar un splash screen. Recibe un callback para continuar."""
 
-    def __init__(self, parent: tk.Tk, duration: int = 2500, on_complete: Callable[[], None] = None):
+    def __init__(self, parent: tk.Tk, on_complete: Callable[[], None] = None):
         self.parent = parent
-        self.duration = duration
         self.on_complete = on_complete
 
         # Ventana splash
@@ -17,7 +16,7 @@ class SplashScreen:
         self.splash.geometry("500x350")
         self.splash.configure(bg="#1a1a1a")
         self.splash.overrideredirect(True)
-        self.splash.resizable(False, False)
+        self.splash.resizable(True, True)
 
         # Centrar
         self.center_window(self.splash, 500, 350)
@@ -73,3 +72,18 @@ class SplashScreen:
 
     def show(self):
         self.splash.grab_set()
+
+
+if __name__ == "__main__":
+    root = tk.Tk()
+    root.title("MUGUI App")
+    root.geometry("800x600")
+
+    def on_splash_complete():
+        root.deiconify()  # Mostrar ventana principal
+        tk.Label(root, text="Ventana Principal de MUGUI",
+                 font=("Helvetica", 24)).pack(pady=200)
+
+    splash = SplashScreen(root, on_complete=on_splash_complete)
+    splash.show()
+    root.mainloop()

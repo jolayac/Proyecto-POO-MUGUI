@@ -3,7 +3,7 @@ from firebase_admin import credentials
 from firebase_admin import db
 import os
 # import json
-from Model.usuario import Usuario
+from mvvm.Model.Usuario import Usuario
 class UsuarioViewModel:
     def __init__(self):
         self.usuario_actual = None  # Almacena el usuario en memoria
