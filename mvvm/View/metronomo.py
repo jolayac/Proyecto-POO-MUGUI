@@ -1,222 +1,219 @@
-# metronomo.py
-# METRÓNOMO MUGUI - VERSIÓN FINAL 100% FUNCIONAL Y SIN ERRORES
-
+# Vista del metrónomo (Frame embebible). Se conecta a MetronomeViewModel.
 import tkinter as tk
 from tkinter import ttk, messagebox
-import time
-import threading
-import numpy as np
-import sys
 
-# ==============================================
-# INTENTAR PYGAME (mejor calidad)
-# ==============================================
-try:
-    import pygame
-    pygame.mixer.pre_init(frequency=44100, size=-16, channels=1, buffer=256)
-    pygame.mixer.init()
-    USANDO_PYGAME = True
-    print("[METRÓNOMO] → Usando pygame (sonido de alta calidad)")
-except Exception as e:
-    USANDO_PYGAME = False
-    print(f"[METRÓNOMO] pygame falló: {e}")
+from mvvm.Model.MetronomeModel import MetronomeModel
+from mvvm.ViewModel.MetronomeVM import MetronomeViewModel
 
-if not USANDO_PYGAME and sys.platform.startswith('win'):
-    import winsound
+# Paleta recomendada (fondo oscuro y colores contrastantes)
+_BG = "#1b1b1b"
+_PANEL = "#323232"
+_ACCENT = "#FC6E20"
+_HIGHLIGHT = "#fee8d0"
 
-class MetronomoApp:
-    def __init__(self):
-        self.root = tk.Tk()
-        self.root.title("Metrónomo - MUGUI")
-        self.root.geometry("520x820")   # ← Tamaño IDEAL y bonito
-        self.root.configure(bg="#1e1e1e")
-        self.root.resizable(False, False)
 
-        self.bpm = 120
-        self.corriendo = False
-        self.beat_count = 0
-        self.compas = 4
-        self.tap_times = []
+class MetronomeFrame(ttk.Frame):
+    """
+    Frame embebible que implementa la interfaz del metrónomo.
+    - Se puede instanciar dentro de la ventana principal (MainApp) o en un Toplevel.
+    - Conecta con MetronomeViewModel y actualiza la UI mediante after()-safe callbacks.
+    - Los círculos se ajustan dinámicamente según el compás seleccionado.
+    """
 
-        # SONIDOS (solo si pygame funciona)
-        if USANDO_PYGAME:
-            self.click_acento = self._crear_sonido(1000, 0.08, 0.8)
-            self.click_normal = self._crear_sonido(800, 0.06, 0.5)
-        else:
-            self.click_acento = self.click_normal = None
+    def __init__(self, master=None):
+        super().__init__(master)
+        # Estilos mínimos
+        self.master = master
+        self.configure(style="Metronome.TFrame")
+        # Modelo + VM
+        self.model = MetronomeModel()
+        self.vm = MetronomeViewModel(self.model)
+        self.vm.on_tick = self._on_tick  # callback desde VM
 
-        # CREAR INTERFAZ (todo después de __init__)
-        self._crear_interfaz()
+        # Estado UI
+        self._lights = []
+        self._lights_frame = None
+        self._create_ui()
 
-    def _crear_sonido(self, freq, duracion, volumen):
-        try:
-            fs = 44100
-            t = np.linspace(0, duracion, int(fs * duracion), False)
-            onda = np.sin(2 * np.pi * freq * t) * volumen
-            onda = np.int16(onda * 32767)
-            return pygame.sndarray.make_sound(onda)
-        except:
-            return None
+    def _create_ui(self):
+        self.pack_propagate(False)
 
-    def reproducir_click(self, acento=False):
-        if USANDO_PYGAME and (acento and self.click_acento or not acento and self.click_normal):
-            try:
-                (self.click_acento if acento else self.click_normal).play()
-                return
-            except:
-                pass
+        # Configure a dark style for ttk widgets
+        style = ttk.Style()
+        style.theme_use("default")
+        style.configure("Metronome.TFrame", background=_BG)
+        style.configure("Title.TLabel", background=_BG, foreground=_HIGHLIGHT, font=("Arial", 18, "bold"))
+        style.configure("Big.TLabel", background=_BG, foreground=_HIGHLIGHT, font=("Consolas", 48, "bold"))
+        style.configure("Accent.TButton", background=_ACCENT, foreground="black")
+        style.map("Accent.TButton", background=[("active", "#ff8a42")])
 
-        if sys.platform.startswith('win'):
-            try:
-                freq = 1000 if acento else 800
-                dur = 120 if acento else 80
-                winsound.Beep(freq, dur)
-            except:
-                pass
-        else:
-            print("\a", end="")
+        # Main container
+        container = tk.Frame(self, bg=_BG)
+        container.pack(fill="both", expand=True, padx=12, pady=12)
 
-    def _crear_interfaz(self):
-        # Título
-        tk.Label(self.root, text="METRÓNOMO", font=("Arial", 28, "bold"),
-                 fg="white", bg="#1e1e1e").pack(pady=30)
+        tk.Label(container, text="Metrónomo", font=("Arial", 20, "bold"),
+                 fg=_HIGHLIGHT, bg=_BG).pack(pady=(6, 12))
 
-        # BPM grande
-        self.bpm_label = tk.Label(self.root, text="120", font=("Consolas", 80, "bold"),
-                                  fg="white", bg="#1e1e1e")
-        self.bpm_label.pack(pady=20)
+        # BPM display
+        self.bpm_label = tk.Label(container, text=str(self.vm.bpm),
+                                  font=("Consolas", 40, "bold"),
+                                  fg=_HIGHLIGHT, bg=_BG)
+        self.bpm_label.pack(pady=(6, 8))
 
         # Slider BPM
-        tk.Label(self.root, text="BPM", font=("Arial", 14), fg="#ffffff", bg="#1e1e1e").pack()
-        self.slider = ttk.Scale(self.root, from_=40, to=240, orient="horizontal",
-                                length=320, command=self._actualizar_desde_slider)
-        self.slider.set(120)
-        self.slider.pack(pady=12)
+        frame_slider = tk.Frame(container, bg=_BG)
+        frame_slider.pack(pady=(6, 8))
+        tk.Label(frame_slider, text="BPM", bg=_BG, fg="#cccccc").pack(side="left", padx=(0, 8))
+        self.slider = ttk.Scale(frame_slider, from_=20, to=300, orient="horizontal",
+                                length=300, command=self._on_slider)
+        self.slider.set(self.vm.bpm)
+        self.slider.pack(side="left")
 
-        # Entrada manual BPM
-        self.entry_bpm = tk.Entry(self.root, font=("Arial", 16), width=6, justify="center")
-        self.entry_bpm.insert(0, "120")
-        self.entry_bpm.pack(pady=5)
-        self.entry_bpm.bind("<Return>", lambda e: self._actualizar_desde_entry())
+        # Entry BPM
+        self.entry_bpm = tk.Entry(container, width=6, justify="center")
+        self.entry_bpm.insert(0, str(self.vm.bpm))
+        self.entry_bpm.pack(pady=6)
+        self.entry_bpm.bind("<Return>", lambda e: self._on_entry())
 
-        # Compás
-        tk.Label(self.root, text="Compás", font=("Arial", 12), fg="#aaaaaa", bg="#1e1e1e").pack(pady=(20,5))
-        self.compas_var = tk.StringVar(value="4")
-        combo = ttk.Combobox(self.root, textvariable=self.compas_var,
-                             values=["2","3","4","5","6","7"], width=5, state="readonly")
+        # Compas combobox
+        tk.Label(container, text="Compás", bg=_BG, fg="#cccccc").pack(pady=(8, 2))
+        self.compas_var = tk.StringVar(value=str(self.vm.compas))
+        combo = ttk.Combobox(container, textvariable=self.compas_var, 
+                             values=[str(i) for i in range(1, 13)], width=4, state="readonly")
         combo.pack()
-        self.compas_var.trace("w", lambda *_: self._actualizar_compas())
+        combo.bind("<<ComboboxSelected>>", lambda e: self._on_compas())
 
-        # Luces
-        self.luces_frame = tk.Frame(self.root, bg="#1e1e1e")
-        self.luces_frame.pack(pady=30)
-        self.luces = []
-        for i in range(7):
-            c = tk.Canvas(self.luces_frame, width=62, height=62, bg="#1e1e1e", highlightthickness=0)
-            circ = c.create_oval(8, 8, 54, 54, fill="#333333", outline="#555555", width=4)
-            c.pack(side="left", padx=14)
+        # Lights (visual beat indicators) - frame que se recreará al cambiar compás
+        self._lights_frame = tk.Frame(container, bg=_BG)
+        self._lights_frame.pack(pady=12)
+        self._recreate_lights()
+
+        # Controls
+        controls = tk.Frame(container, bg=_BG)
+        controls.pack(pady=12)
+        self.btn_toggle = tk.Button(controls, text="INICIAR", bg=_ACCENT, fg="black", 
+                                    width=12, command=self._on_toggle)
+        self.btn_toggle.pack(side="left", padx=6)
+        tk.Button(controls, text="−10", bg=_PANEL, fg="white", 
+                 command=lambda: self._on_adjust(-10)).pack(side="left", padx=4)
+        tk.Button(controls, text="+10", bg=_PANEL, fg="white", 
+                 command=lambda: self._on_adjust(10)).pack(side="left", padx=4)
+
+        # Tap tempo
+        tk.Label(container, text="TAP TEMPO", bg=_BG, fg="#bbbbbb").pack(pady=(10, 0))
+        tk.Button(container, text="TAP", width=10, bg=_HIGHLIGHT, fg="black", 
+                 command=self._on_tap).pack(pady=6)
+
+        # Status
+        '''
+        status_text = "Sonido: pygame" if self.model.using_pygame else (
+            "Sonido: winsound" if self.model.has_winsound else "Sonido: sistema")
+        color = "#00ff00" if self.model.using_pygame else "#ffaa00"
+        self.status_label = tk.Label(container, text=status_text, bg=_BG, fg=color)
+        self.status_label.pack(pady=(8, 0))
+        '''
+
+    def _recreate_lights(self):
+        """Recrear los círculos según el compás actual."""
+        # Limpiar los anteriores
+        for c in self._lights:
+            c.destroy()
+        self._lights = []
+
+        # Crear nuevos círculos según el compás
+        comp = self.vm.compas
+        for i in range(comp):
+            c = tk.Canvas(self._lights_frame, width=40, height=40, bg=_BG, highlightthickness=0)
+            circ = c.create_oval(6, 6, 34, 34, fill="#333333", outline="#555555", width=3)
             c.circ_id = circ
-            self.luces.append(c)
+            c.pack(side="left", padx=6)
+            self._lights.append(c)
 
-        # Botones
-        btn_frame = tk.Frame(self.root, bg="#1e1e1e")
-        btn_frame.pack(pady=30)
+    # ---- UI callbacks que invocan el VM ----
+    def _on_slider(self, val):
+        bpm = int(float(val))
+        self.vm.set_bpm(bpm)
+        self.bpm_label.config(text=str(bpm))
+        self.entry_bpm.delete(0, tk.END)
+        self.entry_bpm.insert(0, str(bpm))
 
-        self.btn_play = tk.Button(btn_frame, text="INICIAR", font=("Arial", 16, "bold"),
-                                  bg="#fc6e20", fg="black", width=12, height=2,
-                                  command=self.toggle)
-        self.btn_play.pack(side="left", padx=20)
-
-        tk.Button(btn_frame, text="−10", font=("Arial", 16), bg="#323232", fg="white",
-                  command=lambda: self.ajustar(-10)).pack(side="left", padx=10)
-        tk.Button(btn_frame, text="+10", font=("Arial", 16), bg="#323232", fg="black",
-                  command=lambda: self.ajustar(10)).pack(side="left", padx=10)
-
-        # Tap Tempo
-        tk.Label(self.root, text="TAP TEMPO", font=("Arial", 10), fg="#888888", bg="#1e1e1e").pack(pady=(25,0))
-        tk.Button(self.root, text="TAP", font=("Arial", 20, "bold"), width=10, height=2,
-                  bg="#ffff55", fg="black", command=self.tap_tempo).pack(pady=10)
-
-        # Estado de sonido
-        estado = "Sonido: pygame" if USANDO_PYGAME else "Sonido: sistema"
-        color = "#00ff00" if USANDO_PYGAME else "#ffaa00"
-        tk.Label(self.root, text=estado, font=("Arial", 9), fg=color, bg="#1e1e1e").pack(pady=5)
-
-    def _actualizar_desde_slider(self, val):
-        valor = int(float(val))
-        self.bpm = valor
-        self.bpm_label.config(text=str(valor))
-        if hasattr(self, 'entry_bpm'):
-            self.entry_bpm.delete(0, tk.END)
-            self.entry_bpm.insert(0, str(valor))
-
-    def _actualizar_desde_entry(self):
+    def _on_entry(self):
         try:
-            valor = int(self.entry_bpm.get())
-            if 40 <= valor <= 240:
-                self.bpm = valor
-                self.bpm_label.config(text=str(valor))
-                self.slider.set(valor)
-        except:
+            v = int(self.entry_bpm.get())
+            self.vm.set_bpm(v)
+            self.slider.set(v)
+            self.bpm_label.config(text=str(v))
+        except Exception:
             pass
 
-    def _actualizar_compas(self):
-        self.compas = int(self.compas_var.get())
+    def _on_compas(self):
+        try:
+            c = int(self.compas_var.get())
+            self.vm.set_compas(c)
+            # Recrear los círculos cuando cambia el compás
+            self._recreate_lights()
+        except Exception:
+            pass
 
-    def ajustar(self, delta):
-        nuevo = max(40, min(240, self.bpm + delta))
-        self.bpm = nuevo
-        self.bpm_label.config(text=str(nuevo))
-        self.slider.set(nuevo)
-        self.entry_bpm.delete(0, tk.END)
-        self.entry_bpm.insert(0, str(nuevo))
-
-    def tap_tempo(self):
-        ahora = time.time()
-        self.tap_times = [t for t in self.tap_times if ahora - t < 2.0] + [ahora]
-        if len(self.tap_times) >= 3:
-            diffs = np.diff(self.tap_times)
-            if len(diffs) > 0:
-                bpm = int(60 / np.mean(diffs))
-                if 40 <= bpm <= 240:
-                    self.ajustar(bpm - self.bpm)  # Usa ajustar para mantener sincronía
-
-    def toggle(self):
-        if self.corriendo:
-            self.corriendo = False
-            self.btn_play.config(text="INICIAR", bg="#fc6e20", fg="black")
+    def _on_toggle(self):
+        self.vm.toggle()
+        # actualizar texto del botón según nuevo estado
+        if self.vm.running:
+            self.btn_toggle.config(text="PARAR", bg="#ff3333", fg="white")
         else:
-            self.corriendo = True
-            self.btn_play.config(text="PARAR", bg="#ff0000", fg="white")
-            self.beat_count = 0
-            threading.Thread(target=self._loop, daemon=True).start()
+            self.btn_toggle.config(text="INICIAR", bg=_ACCENT, fg="black")
+            # limpiar luces cuando se para
+            self._clear_lights()
 
-    def _loop(self):
-        while self.corriendo:
-            delay = 60.0 / self.bpm
-            acento = self.beat_count % self.compas == 0
-            self.reproducir_click(acento)
-            color = "#ff3333" if acento else "#4488ff"
-            self.root.after(0, self._iluminar, self.beat_count % self.compas, color)
-            self.beat_count += 1
-            time.sleep(delay)
+    def _on_adjust(self, delta: int):
+        self.vm.set_bpm(self.vm.bpm + delta)
+        self.slider.set(self.vm.bpm)
+        self.bpm_label.config(text=str(self.vm.bpm))
+        self.entry_bpm.delete(0, tk.END)
+        self.entry_bpm.insert(0, str(self.vm.bpm))
 
-    def _iluminar(self, idx, color):
-        for i, canvas in enumerate(self.luces):
-            canvas.itemconfig(canvas.circ_id, fill=color if i == idx else "#333333")
+    def _on_tap(self):
+        bpm = self.vm.tap()
+        if bpm:
+            # reflejar nuevo BPM en UI
+            self.slider.set(bpm)
+            self.bpm_label.config(text=str(bpm))
+            self.entry_bpm.delete(0, tk.END)
+            self.entry_bpm.insert(0, str(bpm))
 
-    def run(self):
-        self.root.mainloop()
+    # ---- callback llamado por el VM (puede ejecutarse en hilo distinto) ----
+    def _on_tick(self, idx: int, accent: bool):
+        # Asegurar que la actualización UI se ejecute en hilo principal
+        try:
+            self.after(0, self._highlight, idx, accent)
+        except Exception:
+            pass
+
+    def _highlight(self, idx: int, accent: bool):
+        # Actualizar solo hasta compás actual (dinámico según self._lights)
+        for i, c in enumerate(self._lights):
+            color = "#ff3333" if (i == idx and accent) else ("#4488ff" if i == idx else "#333333")
+            c.itemconfig(c.circ_id, fill=color)
+
+    def _clear_lights(self):
+        for c in self._lights:
+            c.itemconfig(c.circ_id, fill="#333333")
 
 
-# LANZADOR SEGURO
+# Launcher seguro para ejecutar el metrónomo como ventana independiente.
 def lanzar_metronomo():
     try:
-        app = MetronomoApp()
-        app.run()
+        root = tk.Tk()
+        root.title("Metrónomo - MUGUI")
+        root.geometry("820x520")
+        root.configure(bg=_BG)
+        frame = MetronomeFrame(root)
+        frame.pack(fill="both", expand=True)
+        root.mainloop()
     except Exception as e:
         messagebox.showerror("Error", f"No se pudo abrir el metrónomo:\n{e}")
 
 
+# Permitir ejecución directa del archivo
 if __name__ == "__main__":
     lanzar_metronomo()
