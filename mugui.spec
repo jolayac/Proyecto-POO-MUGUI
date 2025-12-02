@@ -1,49 +1,25 @@
 # -*- mode: python ; coding: utf-8 -*-
-"""
-Especificación de PyInstaller optimizada para MUGUI
-Excluye librerías innecesarias para reducir tamaño del ejecutable
-"""
+
 
 a = Analysis(
-    ['definitivo.py'],
+    ['c:\\Users\\LENOVO\\3D Objects\\Proyecto-POO-MUGUI\\definitivo.py'],
     pathex=[],
     binaries=[],
-    datas=[
-        ('imagenes', 'imagenes'),
-        ('sonidos', 'sonidos'),
-    ],
-    hiddenimports=[
-        'tkinter',
-        'pygame',
-        'librosa',
-        'pyaudio',
-        'numpy',
-        'mutagen',
-        'firebase_admin',
-    ],
+    datas=[('imagenes', 'imagenes'), ('.env', '.env'), ('sonidos', 'sonidos')],
+    hiddenimports=['pygame', 'pygame.mixer'],
     hookspath=[],
     hooksconfig={},
     runtime_hooks=[],
-    excludedimports=[
-        'matplotlib',
-        'scipy',
-        'pytest',
-        'setuptools',
-        'wheel',
-        'distutils',
-        'pkg_resources',
-    ],
+    excludes=[],
     noarchive=False,
     optimize=0,
 )
-
-pyz = PYZ(a.pure, a.zipped_data, cipher=None)
+pyz = PYZ(a.pure)
 
 exe = EXE(
     pyz,
     a.scripts,
     a.binaries,
-    a.zipfiles,
     a.datas,
     [],
     name='MUGUI',
@@ -59,5 +35,5 @@ exe = EXE(
     target_arch=None,
     codesign_identity=None,
     entitlements_file=None,
-    icon='imagenes/icono.ico',
+    icon=['imagenes\\MuguiLogo.png'],
 )

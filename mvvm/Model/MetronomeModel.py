@@ -43,9 +43,16 @@ class MetronomeModel:
         tic_path = None
         tac_path = None
         try:
-            project_root = os.path.dirname(os.path.dirname(os.path.dirname(__file__)))
-            tic_path = os.path.join(project_root, "sonidos", "tic.wav")
-            tac_path = os.path.join(project_root, "sonidos", "tac.wav")
+            # Si estamos en ejecutable de PyInstaller, usar sys._MEIPASS
+            if getattr(sys, 'frozen', False):
+                base_path = sys._MEIPASS
+            else:
+                # En desarrollo: subir 3 directorios desde Model
+                base_path = os.path.dirname(
+                    os.path.dirname(os.path.dirname(__file__)))
+
+            tic_path = os.path.join(base_path, "sonidos", "tic.wav")
+            tac_path = os.path.join(base_path, "sonidos", "tac.wav")
         except Exception:
             pass
 
@@ -62,7 +69,8 @@ class MetronomeModel:
             # Si no se pudieron cargar los WAV, intentar generar sonidos sintéticos si numpy está disponible
             if not loaded and self.has_numpy:
                 try:
-                    self.click_accent = self._make_sound(1000, 0.08, 0.9)  # frecuencia / duración / volumen
+                    self.click_accent = self._make_sound(
+                        1000, 0.08, 0.9)  # frecuencia / duración / volumen
                     self.click_normal = self._make_sound(800, 0.06, 0.6)
                     loaded = True
                 except Exception:

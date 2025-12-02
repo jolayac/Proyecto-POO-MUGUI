@@ -1,7 +1,12 @@
 # model/firebase_admin.py
 import pyrebase
 import requests
+import os
 from typing import Optional, Dict
+from dotenv import load_dotenv
+
+# Cargar variables de entorno desde .env
+load_dotenv()
 
 # Configuración de Firebase (sin cambios)
 firebase_config = {
@@ -19,16 +24,16 @@ firebase = pyrebase.initialize_app(firebase_config)
 auth = firebase.auth()
 db = firebase.database()  # Instancia para RTDB
 
+
 class FirebaseAdmin:
     """Clase que maneja autenticación y RTDB con Pyrebase.
     Mantiene la funcionalidad de autenticación original y agrega métodos para RTDB."""
 
     def __init__(self):
         self.current_user = None  # Guardará el usuario autenticado
-        # NUEVA LÍNEA: Reemplaza con tu NUEVO Client ID de Desktop app (copiado del paso 3)
-        self.google_client_id = "123456789-abc123.apps.googleusercontent.com"  # <-- ¡PEGA AQUÍ EL NUEVO!
-        # NUEVA LÍNEA: Reemplaza con tu NUEVO Client Secret (copiado del paso 3)
-        self.google_client_secret = "GOCSPX-xyz123..."  # <-- ¡PEGA AQUÍ EL NUEVO!
+        # Cargar Client ID y Secret desde variables de entorno (.env)
+        self.google_client_id = os.getenv("client_id", "")
+        self.google_client_secret = os.getenv("client_secret", "")
 
     # --- Métodos de Autenticación (sin cambios, pero ahora usan los nuevos creds) ---
 
@@ -54,13 +59,16 @@ class FirebaseAdmin:
             "code": code,  # El código temporal de autorización
             "client_id": self.google_client_id,  # Nuevo Client ID
             "client_secret": self.google_client_secret,  # Nuevo Secret
-            "redirect_uri": "urn:ietf:wg:oauth:2.0:oob",  # URI para desktop (out-of-band)
+            # URI para desktop (out-of-band)
+            "redirect_uri": "urn:ietf:wg:oauth:2.0:oob",
             "grant_type": "authorization_code"  # Tipo de grant fijo para este flujo
         }
         r = requests.post(url, data=data)  # POST request a Google
         if r.status_code != 200:  # Si no es OK (ej. 401 por client deleted)
-            error_desc = r.json().get("error_description", "Error desconocido en intercambio de código")
-            return {"success": False, "error": error_desc}  # Devuelve error legible
+            error_desc = r.json().get("error_description",
+                                      "Error desconocido en intercambio de código")
+            # Devuelve error legible
+            return {"success": False, "error": error_desc}
         tokens = r.json()  # Parsea respuesta JSON de Google
         id_token = tokens.get("id_token")  # Extrae el JWT token
         if not id_token:
@@ -74,10 +82,13 @@ class FirebaseAdmin:
         Alternativa: Usar pyrebase.auth.sign_in_with_id_token() directamente si el flujo es simple."""
         try:
             api_key = firebase_config["apiKey"]  # Tu API key de Firebase
-            url = f"https://identitytoolkit.googleapis.com/v1/accounts:signInWithIdp?key={api_key}"  # Endpoint de Firebase para federated login
+            # Endpoint de Firebase para federated login
+            url = f"https://identitytoolkit.googleapis.com/v1/accounts:signInWithIdp?key={api_key}"
             payload = {  # Cuerpo JSON para el POST
-                "postBody": f"id_token={id_token}&providerId=google.com",  # Token + proveedor
-                "requestUri": "http://localhost",  # URI para desktop (puede ser cualquier cosa válida)
+                # Token + proveedor
+                "postBody": f"id_token={id_token}&providerId=google.com",
+                # URI para desktop (puede ser cualquier cosa válida)
+                "requestUri": "http://localhost",
                 "returnSecureToken": True,  # Devuelve token de sesión de Firebase
                 "returnIdpCredential": True  # Devuelve credenciales de Google
             }
@@ -131,7 +142,8 @@ class FirebaseAdmin:
         @return: dict – Config o {} si no existe.
         Alternativa: db.stream() para listeners en tiempo real."""
         try:
-            snapshot = db.child("users").child(uid).child("config").get()  # GET snapshot
+            snapshot = db.child("users").child(
+                uid).child("config").get()  # GET snapshot
             return snapshot or {}  # Val() implícito en Pyrebase
         except Exception as e:
             print(f"Error cargando config de RTDB: {e}")

@@ -33,7 +33,7 @@ class TunerCalibratorFrame(Frame):
                 x, 90, text=f"+{i*10}", fill="#ffffff", font=("Arial", 9))
         self.needle = self.canvas.create_line(
             center_x, 65, center_x, 65, fill="#00ff00", width=5)
-        self.status_label = tk.Label(self, text="Esperando señal...", font=(
+        self.status_label = tk.Label(self, text="Esperando...", font=(
             "Arial", 11), fg="#888888", bg="#1a1a1a")
         self.status_label.pack(pady=5)
         self.last_freq = None
@@ -66,7 +66,7 @@ class TunerCalibratorFrame(Frame):
             self.move_needle(self.last_cents)
         else:
             self.note_label.config(text="---", fg="#888888")
-            self.cents_label.config(text="Sin señal", fg="#aaaa00")
+            self.cents_label.config(text="Escuchando...", fg="#aaaa00")
             self.status_label.config(text="Toca una cuerda", fg="#888888")
             self.move_needle(0)
         self.update_idletasks()

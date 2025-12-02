@@ -1,6 +1,7 @@
 from tkinter import Frame, Label, Button, PhotoImage, ttk
 from mvvm.View.reproductorView.barra_de_tiempo import TimeBarController
 import os
+import sys
 
 
 class VistaReproductor:
@@ -140,14 +141,29 @@ class VistaReproductor:
 
     def _cargar_imagen(self, nombre):
         """Busca y carga una imagen desde las carpetas posibles."""
-        carpetas = ['', 'imagenes', 'images', 'img', 'imágenes']
-        for carpeta in carpetas:
-            ruta = os.path.join(carpeta, nombre)
+        # Detectar si estamos en ejecutable de PyInstaller
+        if getattr(sys, 'frozen', False):
+            # En ejecutable: sys._MEIPASS es la carpeta del bundle
+            base_path = sys._MEIPASS
+        else:
+            # En desarrollo: usar la carpeta del proyecto
+            base_path = os.path.dirname(os.path.dirname(
+                os.path.dirname(os.path.dirname(__file__))))
+
+        # Intentar carpetas posibles
+        carpetas_relativas = ['imagenes', 'images', 'img', 'imágenes', '']
+        for carpeta in carpetas_relativas:
+            if carpeta:
+                ruta = os.path.join(base_path, carpeta, nombre)
+            else:
+                ruta = os.path.join(base_path, nombre)
+
             if os.path.exists(ruta):
                 try:
                     return PhotoImage(file=ruta)
                 except Exception:
                     return None
+
         return None
 
     def abrir_archivos(self):
