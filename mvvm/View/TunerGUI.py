@@ -126,6 +126,18 @@ class TunerGUI(Frame):
         self.fretboard.pack(side="right", fill="both",
                             expand=True, padx=30, pady=30)
 
-    def update(self, freq, note, cents, positions, energy=None):
-        self.calibrator.update(freq, note, cents)
-        self.fretboard.update_notes(positions)
+    def on_audio_update(self, freq, note, cents, positions, energy=None):
+        """Nuevo nombre para actualizar UI desde el loop de audio.
+        Mantengo compatibilidad con otros componentes al definir un alias 'update_alias'."""
+        # delegar a los subcomponentes
+        try:
+            self.calibrator.update(freq, note, cents)
+        except Exception:
+            pass
+        try:
+            self.fretboard.update_notes(positions)
+        except Exception:
+            pass
+
+    # Alias para compatibilidad (no recomendado usar desde fuera)
+    update_alias = on_audio_update

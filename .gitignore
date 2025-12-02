@@ -2,3 +2,5 @@ Info/
 .env
 .vscode/
 __pycache__/
+build/
+dist/

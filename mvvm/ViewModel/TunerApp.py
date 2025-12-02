@@ -26,9 +26,22 @@ class TunerApp:
                 energy = result[1] if result else 0
                 note, cents, positions, _ = self.analyzer.freq_to_note(freq)
                 if self.gui:
-                    self.gui.update(freq, note, cents, positions, energy)
+                    # Preferir on_audio_update para evitar conflicto con tkinter.Misc.update
+                    try:
+                        if hasattr(self.gui, 'on_audio_update'):
+                            self.gui.on_audio_update(
+                                freq, note, cents, positions, energy)
+                        elif hasattr(self.gui, 'update'):
+                            # llamar solo si la firma es compatible
+                            try:
+                                self.gui.update(
+                                    freq, note, cents, positions, energy)
+                            except TypeError:
+                                pass
+                    except Exception:
+                        pass
                 time.sleep(0.02)
             except (OSError, ValueError) as e:
-                print(f"[ERROR] {e}")
+                # print(f"[ERROR] {e}")
                 break
         self.audio.stop()

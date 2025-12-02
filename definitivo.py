@@ -5,6 +5,7 @@ from tkinter import ttk
 from mvvm.View.TunerGUI import TunerGUI
 from mvvm.ViewModel.TunerApp import TunerApp
 from mvvm.View.metronomo import MetronomeFrame
+from mvvm.View.reproductorFrame import ReproductorFrame
 from mvvm.View.splash_screen import SplashScreen
 
 
@@ -37,6 +38,8 @@ class MainApp:
         functions_menu.add_command(label="Afinador", command=self.show_tuner)
         functions_menu.add_command(
             label="Metrónomo", command=self.show_metronome)
+        functions_menu.add_command(
+            label="Reproductor", command=self.show_reproductor)
         menu_bar.add_cascade(label="Funciones", menu=functions_menu)
         self.root.config(menu=menu_bar)
 
@@ -54,6 +57,30 @@ class MainApp:
 
     def cleanup_current_frame(self):
         """Limpia el frame actual y detiene procesos asociados"""
+        # Detener metrónomo si está activo
+        try:
+            if isinstance(self.current_frame, MetronomeFrame):
+                if hasattr(self.current_frame, 'vm'):
+                    try:
+                        self.current_frame.vm.stop()
+                    except:
+                        pass
+        except:
+            pass
+
+        # Detener reproductor si está activo
+        try:
+            if isinstance(self.current_frame, ReproductorFrame):
+                if hasattr(self.current_frame, 'vm'):
+                    try:
+                        self.current_frame.vm.detener_actualizador()
+                        self.current_frame.vm.detener()
+                    except:
+                        pass
+        except:
+            pass
+
+        # Detener afinador (audio thread)
         try:
             if self.audio_thread and self.audio_thread.is_alive():
                 self.running = False
@@ -67,6 +94,7 @@ class MainApp:
         except:
             pass
 
+        # Destruir el frame
         try:
             if self.current_frame:
                 self.current_frame.pack_forget()
@@ -79,6 +107,9 @@ class MainApp:
         """Muestra el afinador como frame embebible"""
         self.cleanup_current_frame()
         self.running = True
+
+        # Ajustar tamaño de ventana para el afinador
+        self.root.geometry("1400x600")
 
         # Crear TunerGUI como Frame dentro del contenedor principal
         self.current_frame = TunerGUI(self.main_container)
@@ -95,8 +126,23 @@ class MainApp:
         self.cleanup_current_frame()
         self.running = False
 
+        # Ajustar tamaño de ventana para el metrónomo
+        self.root.geometry("820x520")
+
         # Crear MetronomeFrame dentro del contenedor principal
         self.current_frame = MetronomeFrame(self.main_container)
+        self.current_frame.pack(fill="both", expand=True)
+
+    def show_reproductor(self):
+        """Muestra el reproductor como frame embebible"""
+        self.cleanup_current_frame()
+        self.running = False
+
+        # Ajustar tamaño de ventana para el reproductor
+        self.root.geometry("420x200")
+
+        # Crear ReproductorFrame dentro del contenedor principal
+        self.current_frame = ReproductorFrame(self.main_container)
         self.current_frame.pack(fill="both", expand=True)
 
     def audio_loop(self):
@@ -116,11 +162,14 @@ class MainApp:
                         note, cents, positions, _ = self.app.analyzer.freq_to_note(
                             freq)
 
-                        # Actualizar UI de forma segura
-                        if self.current_frame and hasattr(self.current_frame, 'update'):
+                        # Actualizar UI de forma segura SOLO si es TunerGUI
+                        if self.current_frame and isinstance(self.current_frame, TunerGUI):
                             try:
-                                self.root.after(0, lambda: self.current_frame.update(
-                                    freq, note, cents, positions, energy))
+                                if hasattr(self.current_frame, 'on_audio_update'):
+                                    # Capturar valores en la lambda para evitar cambios de referencia
+                                    frame = self.current_frame
+                                    self.root.after(0, lambda f=frame, fr=freq, n=note, c=cents, p=positions, e=energy:
+                                                    f.on_audio_update(fr, n, c, p, e) if isinstance(f, TunerGUI) else None)
                             except (tk.TclError, RuntimeError):
                                 break
 

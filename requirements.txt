@@ -7,3 +7,4 @@ librosa
 numpy
 pygame
 pyaudio
+mutagen

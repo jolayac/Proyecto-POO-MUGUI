@@ -204,14 +204,33 @@ class MetronomeFrame(ttk.Frame):
 
     def _highlight(self, idx: int, accent: bool):
         # Actualizar solo hasta compás actual (dinámico según self._lights)
-        for i, c in enumerate(self._lights):
-            color = "#ff3333" if (i == idx and accent) else (
-                "#4488ff" if i == idx else "#333333")
-            c.itemconfig(c.circ_id, fill=color)
+        # Validar que el widget aún existe antes de intentar actualizar
+        try:
+            for i, c in enumerate(self._lights):
+                try:
+                    # Verificar que el widget aún existe
+                    if not c.winfo_exists():
+                        continue
+                    color = "#ff3333" if (i == idx and accent) else (
+                        "#4488ff" if i == idx else "#333333")
+                    c.itemconfig(c.circ_id, fill=color)
+                except Exception:
+                    # Ignorar errores individuales de widgets
+                    pass
+        except Exception:
+            # Si algo falla, simplemente ignorar
+            pass
 
     def _clear_lights(self):
-        for c in self._lights:
-            c.itemconfig(c.circ_id, fill="#333333")
+        try:
+            for c in self._lights:
+                try:
+                    if c.winfo_exists():
+                        c.itemconfig(c.circ_id, fill="#333333")
+                except Exception:
+                    pass
+        except Exception:
+            pass
 
 
 # Launcher seguro para ejecutar el metrónomo como ventana independiente.

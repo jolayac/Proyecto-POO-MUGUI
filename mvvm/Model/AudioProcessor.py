@@ -28,7 +28,7 @@ class AudioProcessor:
                                       rate=self.RATE, input=True,
                                       frames_per_buffer=self.CHUNK,
                                       input_device_index=self.device_index)
-            print(f"[Audio] Micrófono ID {self.device_index} abierto.")
+            # print(f"[Audio] Micrófono ID {self.device_index} abierto.")
         except Exception as e:
             print(f"[ERROR] No se pudo abrir el micrófono: {e}")
             raise
@@ -54,7 +54,8 @@ class AudioProcessor:
                 if 30 <= freq <= 1318:
                     return freq, energy
         except (OSError, ValueError) as e:
-            print(f"[AudioProcessor] Error en process: {e}")
+            # print(f"[AudioProcessor] Error en process: {e}")
+            pass
         return None, energy
 
     def stop(self):
@@ -62,4 +63,4 @@ class AudioProcessor:
             self.stream.stop_stream()
             self.stream.close()
         self.p.terminate()
-        print("[Audio] Stream cerrado.")
+    # print("[Audio] Stream cerrado.")
