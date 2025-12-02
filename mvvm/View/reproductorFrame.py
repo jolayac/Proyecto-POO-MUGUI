@@ -1,4 +1,3 @@
-import tkinter as tk
 from tkinter import Frame
 from mvvm.ViewModel.reproductor_vm import ReproductorViewModel
 from mvvm.View.reproductorView.reproductorUI import VistaReproductor

@@ -1,6 +1,4 @@
 import math
-import librosa
-
 
 class PitchAnalyzer:
     # Afinación estándar (frecuencias exactas de cuerdas al aire)

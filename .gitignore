@@ -4,3 +4,4 @@ Info/
 __pycache__/
 build/
 dist/
+mugui.spec
