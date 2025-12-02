@@ -61,7 +61,8 @@ class TunerCalibratorFrame(Frame):
             self.note_label.config(text=self.last_note, fg="#00ff00")
             self.cents_label.config(
                 text=f"{sign}{self.last_cents} cents", fg=color)
-            self.status_label.config(text="", fg="#00ff00") # Se puede escribir un mensaje mientras está afinando.
+            # Se puede escribir un mensaje mientras está afinando.
+            self.status_label.config(text="", fg="#00ff00")
             self.move_needle(self.last_cents)
         else:
             self.note_label.config(text="---", fg="#888888")
@@ -116,22 +117,15 @@ class FretboardFrame(Frame):
                 x, y, text="●", fill="#222", font=("Arial", 12, "bold"))
 
 
-class TunerGUI:
-    def __init__(self):
-        self.root = tk.Tk()
-        self.root.title("Afinador de Guitarra - MUGUI")
-        self.root.geometry("1200x600")
-        self.root.configure(bg="#181818")
-        self.root.resizable(True, True)
-        self.calibrator = TunerCalibratorFrame(self.root)
+class TunerGUI(Frame):
+    def __init__(self, master=None):
+        super().__init__(master, bg="#181818")
+        self.calibrator = TunerCalibratorFrame(self)
         self.calibrator.pack(side="left", fill="y", padx=30, pady=30)
-        self.fretboard = FretboardFrame(self.root)
+        self.fretboard = FretboardFrame(self)
         self.fretboard.pack(side="right", fill="both",
                             expand=True, padx=30, pady=30)
 
     def update(self, freq, note, cents, positions, energy=None):
         self.calibrator.update(freq, note, cents)
         self.fretboard.update_notes(positions)
-
-    def run(self):
-        self.root.mainloop()

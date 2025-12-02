@@ -42,9 +42,12 @@ class MetronomeFrame(ttk.Frame):
         style = ttk.Style()
         style.theme_use("default")
         style.configure("Metronome.TFrame", background=_BG)
-        style.configure("Title.TLabel", background=_BG, foreground=_HIGHLIGHT, font=("Arial", 18, "bold"))
-        style.configure("Big.TLabel", background=_BG, foreground=_HIGHLIGHT, font=("Consolas", 48, "bold"))
-        style.configure("Accent.TButton", background=_ACCENT, foreground="black")
+        style.configure("Title.TLabel", background=_BG,
+                        foreground=_HIGHLIGHT, font=("Arial", 18, "bold"))
+        style.configure("Big.TLabel", background=_BG,
+                        foreground=_HIGHLIGHT, font=("Consolas", 48, "bold"))
+        style.configure("Accent.TButton", background=_ACCENT,
+                        foreground="black")
         style.map("Accent.TButton", background=[("active", "#ff8a42")])
 
         # Main container
@@ -63,7 +66,8 @@ class MetronomeFrame(ttk.Frame):
         # Slider BPM
         frame_slider = tk.Frame(container, bg=_BG)
         frame_slider.pack(pady=(6, 8))
-        tk.Label(frame_slider, text="BPM", bg=_BG, fg="#cccccc").pack(side="left", padx=(0, 8))
+        tk.Label(frame_slider, text="BPM", bg=_BG,
+                 fg="#cccccc").pack(side="left", padx=(0, 8))
         self.slider = ttk.Scale(frame_slider, from_=20, to=300, orient="horizontal",
                                 length=300, command=self._on_slider)
         self.slider.set(self.vm.bpm)
@@ -76,9 +80,10 @@ class MetronomeFrame(ttk.Frame):
         self.entry_bpm.bind("<Return>", lambda e: self._on_entry())
 
         # Compas combobox
-        tk.Label(container, text="Compás", bg=_BG, fg="#cccccc").pack(pady=(8, 2))
+        tk.Label(container, text="Compás", bg=_BG,
+                 fg="#cccccc").pack(pady=(8, 2))
         self.compas_var = tk.StringVar(value=str(self.vm.compas))
-        combo = ttk.Combobox(container, textvariable=self.compas_var, 
+        combo = ttk.Combobox(container, textvariable=self.compas_var,
                              values=[str(i) for i in range(1, 13)], width=4, state="readonly")
         combo.pack()
         combo.bind("<<ComboboxSelected>>", lambda e: self._on_compas())
@@ -91,18 +96,19 @@ class MetronomeFrame(ttk.Frame):
         # Controls
         controls = tk.Frame(container, bg=_BG)
         controls.pack(pady=12)
-        self.btn_toggle = tk.Button(controls, text="INICIAR", bg=_ACCENT, fg="black", 
+        self.btn_toggle = tk.Button(controls, text="INICIAR", bg=_ACCENT, fg="black",
                                     width=12, command=self._on_toggle)
         self.btn_toggle.pack(side="left", padx=6)
-        tk.Button(controls, text="−10", bg=_PANEL, fg="white", 
-                 command=lambda: self._on_adjust(-10)).pack(side="left", padx=4)
-        tk.Button(controls, text="+10", bg=_PANEL, fg="white", 
-                 command=lambda: self._on_adjust(10)).pack(side="left", padx=4)
+        tk.Button(controls, text="−10", bg=_PANEL, fg="white",
+                  command=lambda: self._on_adjust(-10)).pack(side="left", padx=4)
+        tk.Button(controls, text="+10", bg=_PANEL, fg="white",
+                  command=lambda: self._on_adjust(10)).pack(side="left", padx=4)
 
         # Tap tempo
-        tk.Label(container, text="TAP TEMPO", bg=_BG, fg="#bbbbbb").pack(pady=(10, 0))
-        tk.Button(container, text="TAP", width=10, bg=_HIGHLIGHT, fg="black", 
-                 command=self._on_tap).pack(pady=6)
+        tk.Label(container, text="TAP TEMPO", bg=_BG,
+                 fg="#bbbbbb").pack(pady=(10, 0))
+        tk.Button(container, text="TAP", width=10, bg=_HIGHLIGHT, fg="black",
+                  command=self._on_tap).pack(pady=6)
 
         # Status
         '''
@@ -123,19 +129,26 @@ class MetronomeFrame(ttk.Frame):
         # Crear nuevos círculos según el compás
         comp = self.vm.compas
         for i in range(comp):
-            c = tk.Canvas(self._lights_frame, width=40, height=40, bg=_BG, highlightthickness=0)
-            circ = c.create_oval(6, 6, 34, 34, fill="#333333", outline="#555555", width=3)
+            c = tk.Canvas(self._lights_frame, width=40,
+                          height=40, bg=_BG, highlightthickness=0)
+            circ = c.create_oval(6, 6, 34, 34, fill="#333333",
+                                 outline="#555555", width=3)
             c.circ_id = circ
             c.pack(side="left", padx=6)
             self._lights.append(c)
 
     # ---- UI callbacks que invocan el VM ----
     def _on_slider(self, val):
-        bpm = int(float(val))
-        self.vm.set_bpm(bpm)
-        self.bpm_label.config(text=str(bpm))
-        self.entry_bpm.delete(0, tk.END)
-        self.entry_bpm.insert(0, str(bpm))
+        try:
+            if not hasattr(self, 'entry_bpm'):
+                return
+            bpm = int(float(val))
+            self.vm.set_bpm(bpm)
+            self.bpm_label.config(text=str(bpm))
+            self.entry_bpm.delete(0, tk.END)
+            self.entry_bpm.insert(0, str(bpm))
+        except (tk.TclError, AttributeError):
+            pass
 
     def _on_entry(self):
         try:
@@ -192,7 +205,8 @@ class MetronomeFrame(ttk.Frame):
     def _highlight(self, idx: int, accent: bool):
         # Actualizar solo hasta compás actual (dinámico según self._lights)
         for i, c in enumerate(self._lights):
-            color = "#ff3333" if (i == idx and accent) else ("#4488ff" if i == idx else "#333333")
+            color = "#ff3333" if (i == idx and accent) else (
+                "#4488ff" if i == idx else "#333333")
             c.itemconfig(c.circ_id, fill=color)
 
     def _clear_lights(self):

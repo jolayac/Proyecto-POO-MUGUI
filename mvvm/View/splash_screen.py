@@ -60,13 +60,21 @@ class SplashScreen:
 
     def animate_progress(self, value):
         if value > 400:
-            self.close()
+            # Esperar 1 segundo más antes de cerrar
+            self.splash.after(1000, self.finish)
             return
         self.progress.coords(self.progress_bar, 0, 0, value, 4)
         self.splash.after(15, self.animate_progress, value + 8)
 
     def close(self):
-        self.splash.destroy()
+        try:
+            self.splash.destroy()
+        except:
+            pass
+
+    def finish(self):
+        """Llamado cuando el splash screen debe terminar y ejecutar callback"""
+        self.close()
         if self.on_complete:
             self.on_complete()
 

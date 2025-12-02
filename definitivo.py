@@ -12,11 +12,20 @@ class MainApp:
     def __init__(self):
         self.root = tk.Tk()
         self.root.title("MUGUI App")
-        self.root.geometry("800x600")
+        self.root.geometry("1400x600")
+        self.root.withdraw()  # Ocultar ventana principal al inicio
+
         self.current_frame = None
+        self.audio_thread = None
+        self.app = None
+        self.running = True
+        self.main_container = None  # Se inicializará antes del splash
 
         # Crear menú
         self.create_menu()
+
+        # Inicializar contenedor ANTES de mostrar splash screen
+        self.initialize_main_container()
 
         # Mostrar splash screen
         self.splash = SplashScreen(self.root, on_complete=self.show_main_frame)
@@ -26,42 +35,113 @@ class MainApp:
         menu_bar = tk.Menu(self.root)
         functions_menu = tk.Menu(menu_bar, tearoff=0)
         functions_menu.add_command(label="Afinador", command=self.show_tuner)
-        functions_menu.add_command(label="Metrónomo", command=self.show_metronome)
+        functions_menu.add_command(
+            label="Metrónomo", command=self.show_metronome)
         menu_bar.add_cascade(label="Funciones", menu=functions_menu)
         self.root.config(menu=menu_bar)
 
+    def initialize_main_container(self):
+        """Inicializa el contenedor principal (se ejecuta ANTES del splash)"""
+        self.main_container = tk.Frame(self.root, bg="#1a1a1a")
+        self.main_container.pack(fill="both", expand=True)
+
     def show_main_frame(self):
-        self.splash.close()
-        self.show_tuner()  # Mostrar el afinador por defecto
+        """Llamado cuando splash screen termina"""
+        # Mostrar ventana principal
+        self.root.deiconify()
+        # Mostrar afinador por defecto
+        self.show_tuner()
+
+    def cleanup_current_frame(self):
+        """Limpia el frame actual y detiene procesos asociados"""
+        try:
+            if self.audio_thread and self.audio_thread.is_alive():
+                self.running = False
+                # Esperar a que el thread termine
+                self.audio_thread.join(timeout=1)
+            if self.app and hasattr(self.app, 'audio'):
+                try:
+                    self.app.audio.stop()
+                except:
+                    pass
+        except:
+            pass
+
+        try:
+            if self.current_frame:
+                self.current_frame.pack_forget()
+                self.current_frame.destroy()
+                self.current_frame = None
+        except:
+            pass
 
     def show_tuner(self):
-        if self.current_frame:
-            self.current_frame.destroy()
-        self.current_frame = TunerGUI()
-        app = TunerApp()
-        threading.Thread(target=self.audio_loop, daemon=True, args=(app,)).start()
+        """Muestra el afinador como frame embebible"""
+        self.cleanup_current_frame()
+        self.running = True
+
+        # Crear TunerGUI como Frame dentro del contenedor principal
+        self.current_frame = TunerGUI(self.main_container)
+        self.current_frame.pack(fill="both", expand=True)
+
+        # Iniciar thread de audio
+        self.app = TunerApp()
+        self.audio_thread = threading.Thread(
+            target=self.audio_loop, daemon=True)
+        self.audio_thread.start()
 
     def show_metronome(self):
-        if self.current_frame:
-            self.current_frame.destroy()
-        self.current_frame = MetronomeFrame(self.root)
+        """Muestra el metrónomo como frame embebible"""
+        self.cleanup_current_frame()
+        self.running = False
 
-    def audio_loop(self, app):
-        app.audio.start()
-        while True:
+        # Crear MetronomeFrame dentro del contenedor principal
+        self.current_frame = MetronomeFrame(self.main_container)
+        self.current_frame.pack(fill="both", expand=True)
+
+    def audio_loop(self):
+        """Loop de procesamiento de audio (corre en thread separado)"""
+        try:
+            if not self.app or not hasattr(self.app, 'audio'):
+                return
+
+            self.app.audio.start()
+            while self.running and self.current_frame:
+                try:
+                    result = self.app.audio.process()
+                    freq = result[0] if result else None
+                    energy = result[1] if result else 0
+
+                    if self.app and hasattr(self.app, 'analyzer'):
+                        note, cents, positions, _ = self.app.analyzer.freq_to_note(
+                            freq)
+
+                        # Actualizar UI de forma segura
+                        if self.current_frame and hasattr(self.current_frame, 'update'):
+                            try:
+                                self.root.after(0, lambda: self.current_frame.update(
+                                    freq, note, cents, positions, energy))
+                            except (tk.TclError, RuntimeError):
+                                break
+
+                    time.sleep(0.02)
+                except (OSError, ValueError, AttributeError):
+                    break
+        finally:
             try:
-                result = app.audio.process()
-                freq = result[0] if result else None
-                energy = result[1] if result else 0
-                note, cents, positions, _ = app.analyzer.freq_to_note(freq)
-                self.root.after(0, self.current_frame.update, freq, note, cents, positions, energy)
-                time.sleep(0.02)
-            except (OSError, ValueError) as e:
-                print(f"[ERROR] {e}")
-                break
-        app.audio.stop()
+                if self.app and hasattr(self.app, 'audio'):
+                    self.app.audio.stop()
+            except:
+                pass
+
+    def on_closing(self):
+        """Llamado cuando se cierra la ventana"""
+        self.running = False
+        self.cleanup_current_frame()
+        self.root.destroy()
 
     def run(self):
+        self.root.protocol("WM_DELETE_WINDOW", self.on_closing)
         self.root.mainloop()
 
 
