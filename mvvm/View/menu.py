@@ -22,7 +22,7 @@ class MenuFrame(ttk.Frame):
     """
 
     def __init__(self, parent, on_tuner_clicked=None, on_metronome_clicked=None,
-                 on_reproductor_clicked=None):
+                 on_reproductor_clicked=None, on_chords_clicked=None):
         """
         Inicializa el MenuFrame.
 
@@ -31,6 +31,7 @@ class MenuFrame(ttk.Frame):
             on_tuner_clicked: Callback cuando se hace clic en "Afinador"
             on_metronome_clicked: Callback cuando se hace clic en "Metrónomo"
             on_reproductor_clicked: Callback cuando se hace clic en "Reproductor"
+            on_chords_clicked: Callback cuando se hace clic en "Acordes"
         """
         super().__init__(parent)
 
@@ -38,6 +39,7 @@ class MenuFrame(ttk.Frame):
         self.on_tuner_clicked = on_tuner_clicked
         self.on_metronome_clicked = on_metronome_clicked
         self.on_reproductor_clicked = on_reproductor_clicked
+        self.on_chords_clicked = on_chords_clicked
 
         # Configurar estilo
         self.configure(style='Dark.TFrame')
@@ -97,6 +99,13 @@ class MenuFrame(ttk.Frame):
             "🎵 Reproductor",
             self.on_reproductor_clicked,
             row=0, column=2
+        )
+
+        self._create_button(
+            buttons_frame,
+            "🎼 Acordes",
+            self.on_chords_clicked,
+            row=1, column=1
         )
 
     def _get_logo_path(self):

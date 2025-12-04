@@ -16,6 +16,8 @@ from mvvm.ViewModel.TunerApp import TunerApp
 from mvvm.View.metronomo import MetronomeFrame
 from mvvm.View.reproductorFrame import ReproductorFrame
 from mvvm.View.menu import MenuFrame
+from mvvm.View.chords import ChordDetectorView
+from mvvm.ViewModel.chords_vm import ChordDetectorViewModel
 
 
 class FrameManager:
@@ -40,7 +42,8 @@ class FrameManager:
             self.main_container,
             on_tuner_clicked=self.show_tuner,
             on_metronome_clicked=self.show_metronome,
-            on_reproductor_clicked=self.show_reproductor
+            on_reproductor_clicked=self.show_reproductor,
+            on_chords_clicked=self.show_chords
         )
         self.nav_vm.current_frame.pack(fill="both", expand=True)
 
@@ -74,6 +77,17 @@ class FrameManager:
         self.root.geometry("420x200")
 
         self.nav_vm.current_frame = ReproductorFrame(self.main_container)
+        self.nav_vm.current_frame.pack(fill="both", expand=True)
+
+    def show_chords(self):
+        """Muestra el detector de acordes."""
+        self.cleanup_current_frame()
+        self.nav_vm.audio_running = False
+        self.root.geometry("800x600")
+
+        chord_vm = ChordDetectorViewModel()
+        self.nav_vm.current_frame = ChordDetectorView(
+            chord_vm, self.main_container)
         self.nav_vm.current_frame.pack(fill="both", expand=True)
 
     def _audio_loop(self):

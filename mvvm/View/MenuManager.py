@@ -55,6 +55,10 @@ class MenuManager:
             label="Reproductor",
             command=self.frame_manager.show_reproductor
         )
+        functions_menu.add_command(
+            label="Acordes",
+            command=self.frame_manager.show_chords
+        )
         self.menu_bar.add_cascade(label="Funciones", menu=functions_menu)
 
         # Menú Cuenta
