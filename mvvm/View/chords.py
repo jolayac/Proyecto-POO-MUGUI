@@ -7,19 +7,30 @@ from mvvm.ViewModel.chords_vm import ChordDetectorViewModel, ChordDetectionResul
 
 class ChordDetectorView(tk.Frame):
     def __init__(self, view_model: ChordDetectorViewModel, parent=None) -> None:
-        super().__init__(parent)
+        super().__init__(parent, bg="#1a1a1a")
         self._view_model = view_model
 
+        # Variables para escalado responsivo
+        self._base_width = 800
+        self._base_height = 600
+        self._scale_factor = 1.0
+
+        # Vincularse a eventos de redimensionamiento
+        self.bind("<Configure>", self._on_resize)
+
         self.title_label = tk.Label(
-            self, text="Detector de acordes", font=("Helvetica", 18, "bold"))
+            self, text="Detector de acordes", font=("Helvetica", 18, "bold"),
+            bg="#1a1a1a", fg="#fee8d0")
         self.title_label.pack(pady=10)
 
         self.chord_label = tk.Label(
-            self, text="Pulsa 'Analizar' y toca un acorde", font=("Helvetica", 16))
+            self, text="Pulsa 'Analizar' y toca un acorde", font=("Helvetica", 16),
+            bg="#1a1a1a", fg="#fee8d0")
         self.chord_label.pack(pady=10)
 
         self.detail_label = tk.Label(
-            self, text="", font=("Helvetica", 10), justify=tk.LEFT)
+            self, text="", font=("Helvetica", 10), justify=tk.LEFT,
+            bg="#1a1a1a", fg="#cccccc")
         self.detail_label.pack(pady=5)
 
         self.analyze_button = tk.Button(
@@ -27,6 +38,7 @@ class ChordDetectorView(tk.Frame):
             text="Analizar",
             font=("Helvetica", 14),
             command=self.on_analyze_click,
+            bg="#FC6E20", fg="black"
         )
         self.analyze_button.pack(pady=10)
 
@@ -34,11 +46,18 @@ class ChordDetectorView(tk.Frame):
             self,
             text="La aplicación grabará unos segundos desde el micrófono y luego estimará el acorde.",
             font=("Helvetica", 10),
+            bg="#1a1a1a", fg="#cccccc"
         )
         self.info_label.pack(pady=10)
 
-        self.canvas = tk.Canvas(self, width=500, height=200, bg="white")
-        self.canvas.pack(pady=10)
+        # Frame para centrar el canvas
+        canvas_frame = tk.Frame(self, bg="#1a1a1a")
+        canvas_frame.pack(pady=10, fill="both", expand=True, padx=20)
+
+        # Canvas con fondo #323232
+        self.canvas = tk.Canvas(
+            canvas_frame, width=500, height=200, bg="#323232", highlightthickness=0)
+        self.canvas.pack(fill="both", expand=True)
 
         self.after(200, self._check_result_queue)
 
@@ -80,10 +99,15 @@ class ChordDetectorView(tk.Frame):
         if not freqs:
             return
 
-        width = int(self.canvas["width"])
-        height = int(self.canvas["height"])
+        width = int(self.canvas.winfo_width())
+        height = int(self.canvas.winfo_height())
 
-        margin = 30
+        if width <= 1:
+            width = 500
+        if height <= 1:
+            height = 200
+
+        margin = 40
         bar_max_height = height - 2 * margin
         n = len(freqs)
         if n <= 0:
@@ -101,15 +125,20 @@ class ChordDetectorView(tk.Frame):
         x1 = width - margin
         y1_axis = margin
 
-        self.canvas.create_line(x0, y0_axis, x1, y0_axis, fill="black")
-        self.canvas.create_line(x0, y0_axis, x0, y1_axis, fill="black")
+        # Dibujar ejes
+        self.canvas.create_line(x0, y0_axis, x1, y0_axis,
+                                fill="#888888", width=2)
+        self.canvas.create_line(x0, y0_axis, x0, y1_axis,
+                                fill="#888888", width=2)
 
+        # Etiquetas de ejes
         self.canvas.create_text(
             (x0 + x1) / 2,
             height - 5,
             text="Frecuencia / Nota",
             font=("Helvetica", 9),
             anchor="s",
+            fill="#cccccc"
         )
         self.canvas.create_text(
             5,
@@ -117,8 +146,10 @@ class ChordDetectorView(tk.Frame):
             text="Intensidad",
             font=("Helvetica", 9),
             anchor="w",
+            fill="#cccccc"
         )
 
+        # Dibujar barras con color #fee8d0
         for i, f in enumerate(freqs):
             x = margin + (i + 0.5) * step
             mag = mags[i] if i < len(mags) else max_mag
@@ -131,13 +162,39 @@ class ChordDetectorView(tk.Frame):
             y1 = y0_axis
             y0_bar = max(y1 - bar_height, y1_axis + 5)
             self.canvas.create_rectangle(
-                x - 5, y0_bar, x + 5, y1, fill="skyblue")
+                x - 5, y0_bar, x + 5, y1, fill="#fee8d0", outline="#ffb380", width=1)
 
             label = labels[i] if i < len(labels) else ""
             text = f"{label}\n{f:.0f} Hz"
             text_y = max(y0_bar - 2, y1_axis + 2)
             self.canvas.create_text(
-                x, text_y, text=text, font=("Helvetica", 8), anchor="s")
+                x, text_y, text=text, font=("Helvetica", 8), anchor="s", fill="#cccccc")
+
+    def _on_resize(self, event=None) -> None:
+        """Maneja el redimensionamiento del frame."""
+        try:
+            if event and hasattr(event, 'width') and event.width > 1:
+                self._scale_factor = event.width / self._base_width
+                self._update_fonts()
+        except Exception:
+            pass
+
+    def _update_fonts(self) -> None:
+        """Actualiza los tamaños de fuente según el factor de escala."""
+        try:
+            title_size = max(14, int(18 * self._scale_factor))
+            chord_size = max(12, int(16 * self._scale_factor))
+            detail_size = max(9, int(10 * self._scale_factor))
+            button_size = max(12, int(14 * self._scale_factor))
+            info_size = max(9, int(10 * self._scale_factor))
+
+            self.title_label.config(font=("Helvetica", title_size, "bold"))
+            self.chord_label.config(font=("Helvetica", chord_size))
+            self.detail_label.config(font=("Helvetica", detail_size))
+            self.analyze_button.config(font=("Helvetica", button_size))
+            self.info_label.config(font=("Helvetica", info_size))
+        except Exception:
+            pass
 
     def run(self) -> None:
         self.mainloop()

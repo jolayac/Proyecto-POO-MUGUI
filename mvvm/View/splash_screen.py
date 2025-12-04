@@ -38,8 +38,8 @@ class SplashScreen:
         # Texto
         tk.Label(self.splash, text="MUGUI", font=(
             "Helvetica", 28, "bold"), fg="#ecf0f1", bg="#1a1a1a").pack()
-        tk.Label(self.splash, text="Gestión Inteligente", font=(
-            "Helvetica", 12), fg="#bdc3c7", bg="#1a1a1a").pack(pady=(5, 30))
+        tk.Label(self.splash, text="Cargando...", font=(
+            "Helvetica", 14), fg="#bdc3c7", bg="#1a1a1a").pack(pady=(5, 20))
 
         # Barra de progreso
         self.progress = tk.Canvas(

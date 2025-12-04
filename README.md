@@ -1,10 +1,11 @@
 # Manual de Usuario - MUGUI
 
-Esta aplicación te proporciona tres herramientas esenciales para practicar música:
+Esta aplicación te proporciona cuatro herramientas esenciales para practicar música:
 
 - **Afinador** - Afina tu guitarra con precisión
 - **Metrónomo** - Mantén el ritmo mientras practicas
 - **Reproductor** - Escucha tu música favorita mientras practicas
+- **Detector de Acordes** - Identifica automáticamente los acordes que tocas
 
 
 ## Primeros Pasos
@@ -28,15 +29,15 @@ Esta aplicación te proporciona tres herramientas esenciales para practicar mús
 
 ## Interfaz Principal
 
-Una vez cargada la aplicación, verás la pantalla principal con tres elementos:
+Una vez cargada la aplicación, verás la pantalla principal con cuatro elementos:
 
 ### Menú de Navegación
 
 ![alt text](image.png)
-
-En la pantalla inicial tienes acceso a los tres módulos:
+En la pantalla inicial tienes acceso a los cuatro módulos:
 - **Afinador** - Abre el módulo de afinación
-- **Metrónomo** - Abre el módulo de metrónomo
+- **Metronomo** - Abre el módulo de metrónomo
+- **Acordes** - Abre el detector de acordes
 - **Reproductor** - Abre el módulo de reproductor
 
 También puedes usar el menú superior:
@@ -124,7 +125,7 @@ Si no sabes qué BPM usar, puedes calibrar el tempo:
 
 ---
 
-## 🎵 Módulo de Reproductor
+## Módulo de Reproductor
 
 ### ¿Cómo Funciona?
 
@@ -156,71 +157,15 @@ El reproductor te permite escuchar archivos MP3 mientras practicas con el afinad
 
 
 
-
-
-### Problema: "Los archivos MP3 no se cargan en el reproductor"
-
-**¿Cuál es el problema?**
-- No puedo agregar archivos o no se reproduce nada
-
-**¿Cómo lo soluciono?**
-
-1. **Verifica el formato:**
-   - ¿Es un archivo MP3 válido?
-   - Prueba con un MP3 diferente
-
-2. **Verifica la ruta del archivo:**
-   - Si la ruta tiene caracteres especiales, puede causar problemas
-   - Intenta renombrar el archivo con caracteres simples
-
-3. **Espera a que cargue:**
-   - Los archivos grandes pueden tardar
-   - Espera unos segundos
-
 ---
 
-### Problema: "Error de módulo no encontrado"
+## Módulo de Detector de Acordes
 
-**¿Cuál es el problema?**
-```
-ModuleNotFoundError: No module named 'pygame'
-```
+![alt text](image-4.png)
 
-**¿Cómo lo soluciono?**
+El detector de acordes analiza el sonido en tiempo real y muestra automáticamente qué acorde estás tocando. Funciona detectando las frecuencias presentes en el audio y comparándolas con patrones de acordes conocidos.
 
-1. Reinstala las dependencias:
-   ```bash
-   pip install -r requirements.txt
-   ```
 
-2. Si persiste, instala manualmente:
-   ```bash
-   pip install pygame librosa pyaudio numpy mutagen
-   ```
-
----
-
-### Problema: "La aplicación se congela"
-
-**¿Cuál es el problema?**
-- MUGUI no responde a los clics
-
-**¿Cómo lo soluciono?**
-
-1. **Espera un momento:**
-   - A veces procesa audio en segundo plano
-   - Espera 5-10 segundos
-
-2. **Cambia de módulo:**
-   - Abre el menú "Funciones"
-   - Selecciona otro módulo
-   - Vuelve al anterior
-
-3. **Reinicia la aplicación:**
-   - Presiona Ctrl+C en la terminal
-   - Abre nuevamente
-
----
 ### Instalación Completa
 
 **1. Clonar el repositorio:**
@@ -239,16 +184,6 @@ pip install -r requirements.txt
 python definitivo.py
 ```
 
-### Dependencias del Proyecto
-
-| Librería | Función |
-|----------|---------|
-| **pygame** | Reproducción de audio y síntesis de sonidos |
-| **librosa** | Análisis de FFT y detección de pitch |
-| **pyaudio** | Captura de audio del micrófono |
-| **numpy** | Procesamiento de señales digitales |
-| **mutagen** | Lectura de metadatos de MP3 |
-| **firebase-admin** | Base de datos y autenticación |
 
 ### Arquitectura del Proyecto
 
@@ -261,6 +196,7 @@ Proyecto-POO-MUGUI/
 │   │   ├── AudioProcessor.py
 │   │   ├── PitchAnalyzer.py
 │   │   ├── MetronomeModel.py
+│   │   ├── firebase_admin.py
 │   │   └── reproductorModel/
 │   │       ├── reproductor.py
 │   │       └── pista.py
@@ -268,16 +204,25 @@ Proyecto-POO-MUGUI/
 │   │   ├── FrameManager.py
 │   │   ├── MenuManager.py
 │   │   ├── AuthenticationView.py
+│   │   ├── menu.py
 │   │   ├── TunerGUI.py
 │   │   ├── metronomo.py
+│   │   ├── chords.py    
 │   │   ├── reproductorFrame.py
+│   │   ├── afinador/          
+│   │   │   ├── Fretboard.py
+│   │   │   └── TunerCalibrator.py
 │   │   └── reproductorView/
-│   │       └── reproductorUI.py
+│   │       ├── reproductorUI.py
+│   │       └── barra_de_tiempo.py
 │   └── ViewModel/             # Coordinación
 │       ├── FrameNavigationViewModel.py
 │       ├── MenuViewModel.py
 │       ├── TunerApp.py
 │       ├── MetronomeVM.py
+│       ├── reproductor_vm.py
+│       ├── authentication_vm.py
+│       └── chords_vm.py 
 │       └── reproductor_vm.py
 ├── sonidos/
 │   ├── tic.wav
@@ -292,8 +237,8 @@ Proyecto-POO-MUGUI/
 **Cambiar dispositivo de micrófono:**
 
 1. Abre `mvvm/Model/AudioProcessor.py`
-2. Busca `device_index = 0`
-3. Cambia el número según tus dispositivos
+2. Busca `device_index = None`
+3. Cambia None por el número de tu dispositivo
 
 **Listar dispositivos disponibles:**
 ```bash
@@ -317,7 +262,7 @@ fmax=1318,   # Frecuencia máxima (Hz)
 
 ## Información de cuentas
 
-Para manejar las opciones de inici de seción y registrar, se tiene que crear un archivo .env con las siguientes variables:
+Para manejar las opciones de inicio de seción y registrar, se tiene que crear un archivo .env con las siguientes variables:
 Para habilitar el inicio de sesión y registro de usuarios, debes crear un archivo `.env` en la raíz del proyecto con las siguientes variables:
 
 ```

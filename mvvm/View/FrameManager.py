@@ -65,7 +65,7 @@ class FrameManager:
         """Muestra el metrónomo."""
         self.cleanup_current_frame()
         self.nav_vm.audio_running = False
-        self.root.geometry("820x520")
+        self.root.geometry("1400x600")
 
         self.nav_vm.current_frame = MetronomeFrame(self.main_container)
         self.nav_vm.current_frame.pack(fill="both", expand=True)
@@ -74,7 +74,7 @@ class FrameManager:
         """Muestra el reproductor."""
         self.cleanup_current_frame()
         self.nav_vm.audio_running = False
-        self.root.geometry("420x200")
+        self.root.geometry("1400x600")
 
         self.nav_vm.current_frame = ReproductorFrame(self.main_container)
         self.nav_vm.current_frame.pack(fill="both", expand=True)
@@ -83,7 +83,7 @@ class FrameManager:
         """Muestra el detector de acordes."""
         self.cleanup_current_frame()
         self.nav_vm.audio_running = False
-        self.root.geometry("800x600")
+        self.root.geometry("1400x600")
 
         chord_vm = ChordDetectorViewModel()
         self.nav_vm.current_frame = ChordDetectorView(

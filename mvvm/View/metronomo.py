@@ -33,10 +33,19 @@ class MetronomeFrame(ttk.Frame):
         # Estado UI
         self._lights = []
         self._lights_frame = None
+
+        # Variables para escalado responsivo
+        self._base_width = 820
+        self._base_height = 520
+        self._scale_factor = 1.0
+
         self._create_ui()
+        # Vincularse a eventos de redimensionamiento
+        self.bind("<Configure>", self._on_resize)
 
     def _create_ui(self):
-        self.pack_propagate(False)
+        # Permitir que el frame se expanda con la ventana
+        self.pack_propagate(True)
 
         # Configure a dark style for ttk widgets
         style = ttk.Style()
@@ -51,90 +60,98 @@ class MetronomeFrame(ttk.Frame):
         style.map("Accent.TButton", background=[("active", "#ff8a42")])
 
         # Main container
-        container = tk.Frame(self, bg=_BG)
-        container.pack(fill="both", expand=True, padx=12, pady=12)
+        self.container = tk.Frame(self, bg=_BG)
+        self.container.pack(fill="both", expand=True, padx=12, pady=12)
 
-        tk.Label(container, text="Metrónomo", font=("Arial", 20, "bold"),
-                 fg=_HIGHLIGHT, bg=_BG).pack(pady=(6, 12))
+        # Título
+        self.title_label = tk.Label(self.container, text="Metrónomo", font=("Arial", 20, "bold"),
+                                    fg=_HIGHLIGHT, bg=_BG)
+        self.title_label.pack(pady=(6, 12))
 
         # BPM display
-        self.bpm_label = tk.Label(container, text=str(self.vm.bpm),
+        self.bpm_label = tk.Label(self.container, text=str(self.vm.bpm),
                                   font=("Consolas", 40, "bold"),
                                   fg=_HIGHLIGHT, bg=_BG)
         self.bpm_label.pack(pady=(6, 8))
 
         # Slider BPM
-        frame_slider = tk.Frame(container, bg=_BG)
-        frame_slider.pack(pady=(6, 8))
+        frame_slider = tk.Frame(self.container, bg=_BG)
+        frame_slider.pack(pady=(6, 8), fill="x", padx=20)
         tk.Label(frame_slider, text="BPM", bg=_BG,
                  fg="#cccccc").pack(side="left", padx=(0, 8))
         self.slider = ttk.Scale(frame_slider, from_=20, to=300, orient="horizontal",
-                                length=300, command=self._on_slider)
+                                command=self._on_slider)
         self.slider.set(self.vm.bpm)
-        self.slider.pack(side="left")
+        self.slider.pack(side="left", fill="x", expand=True)
 
         # Entry BPM
-        self.entry_bpm = tk.Entry(container, width=6, justify="center")
+        self.entry_bpm = tk.Entry(self.container, width=6, justify="center")
         self.entry_bpm.insert(0, str(self.vm.bpm))
         self.entry_bpm.pack(pady=6)
         self.entry_bpm.bind("<Return>", lambda e: self._on_entry())
 
         # Compas combobox
-        tk.Label(container, text="Compás", bg=_BG,
+        tk.Label(self.container, text="Compás", bg=_BG,
                  fg="#cccccc").pack(pady=(8, 2))
         self.compas_var = tk.StringVar(value=str(self.vm.compas))
-        combo = ttk.Combobox(container, textvariable=self.compas_var,
+        combo = ttk.Combobox(self.container, textvariable=self.compas_var,
                              values=[str(i) for i in range(1, 13)], width=4, state="readonly")
         combo.pack()
         combo.bind("<<ComboboxSelected>>", lambda e: self._on_compas())
 
         # Lights (visual beat indicators) - frame que se recreará al cambiar compás
-        self._lights_frame = tk.Frame(container, bg=_BG)
-        self._lights_frame.pack(pady=12)
+        self._lights_frame = tk.Frame(self.container, bg=_BG)
+        self._lights_frame.pack(pady=12, fill="both", expand=True)
         self._recreate_lights()
 
         # Controls
-        controls = tk.Frame(container, bg=_BG)
-        controls.pack(pady=12)
-        self.btn_toggle = tk.Button(controls, text="INICIAR", bg=_ACCENT, fg="black",
-                                    width=12, command=self._on_toggle)
+        controls = tk.Frame(self.container, bg=_BG)
+        controls.pack(pady=12, fill="x")
+        # Centrar horizontalmente los botones
+        btn_subframe = tk.Frame(controls, bg=_BG)
+        btn_subframe.pack()
+        self.btn_toggle = tk.Button(btn_subframe, text="INICIAR", bg=_ACCENT, fg="black",
+                                    command=self._on_toggle)
         self.btn_toggle.pack(side="left", padx=6)
-        tk.Button(controls, text="−10", bg=_PANEL, fg="white",
+        tk.Button(btn_subframe, text="−10", bg=_PANEL, fg="white",
                   command=lambda: self._on_adjust(-10)).pack(side="left", padx=4)
-        tk.Button(controls, text="+10", bg=_PANEL, fg="white",
+        tk.Button(btn_subframe, text="+10", bg=_PANEL, fg="white",
                   command=lambda: self._on_adjust(10)).pack(side="left", padx=4)
 
         # Tap tempo
-        tk.Label(container, text="TAP TEMPO", bg=_BG,
+        tk.Label(self.container, text="TAP TEMPO", bg=_BG,
                  fg="#bbbbbb").pack(pady=(10, 0))
-        tk.Button(container, text="TAP", width=10, bg=_HIGHLIGHT, fg="black",
+        tk.Button(self.container, text="TAP", bg=_HIGHLIGHT, fg="black",
                   command=self._on_tap).pack(pady=6)
 
-        # Status
-        '''
-        status_text = "Sonido: pygame" if self.model.using_pygame else (
-            "Sonido: winsound" if self.model.has_winsound else "Sonido: sistema")
-        color = "#00ff00" if self.model.using_pygame else "#ffaa00"
-        self.status_label = tk.Label(container, text=status_text, bg=_BG, fg=color)
-        self.status_label.pack(pady=(8, 0))
-        '''
-
     def _recreate_lights(self):
-        """Recrear los círculos según el compás actual."""
+        """Recrear los círculos según el compás actual, con tamaño responsivo."""
         # Limpiar los anteriores
         for c in self._lights:
             c.destroy()
         self._lights = []
 
+        # Calcular tamaño de los círculos basado en el tamaño del frame
+        container_width = self._lights_frame.winfo_width()
+        if container_width <= 1:
+            container_width = 800  # Valor por defecto
+
         # Crear nuevos círculos según el compás
         comp = self.vm.compas
-        for i in range(comp):
-            c = tk.Canvas(self._lights_frame, width=40,
-                          height=40, bg=_BG, highlightthickness=0)
-            circ = c.create_oval(6, 6, 34, 34, fill="#333333",
-                                 outline="#555555", width=3)
+
+        # Calcular tamaño dinámico: más pequeño si hay muchos compases
+        max_circle_width = int(container_width / (comp + 2))
+        circle_size = max(30, min(60, max_circle_width))
+
+        for _ in range(comp):
+            c = tk.Canvas(self._lights_frame, width=circle_size,
+                          height=circle_size, bg=_BG, highlightthickness=0)
+
+            margin = 3
+            circ = c.create_oval(margin, margin, circle_size - margin, circle_size - margin,
+                                 fill="#333333", outline="#555555", width=3)
             c.circ_id = circ
-            c.pack(side="left", padx=6)
+            c.pack(side="left", padx=max(3, circle_size // 15), expand=True)
             self._lights.append(c)
 
     # ---- UI callbacks que invocan el VM ----
@@ -165,6 +182,28 @@ class MetronomeFrame(ttk.Frame):
             self.vm.set_compas(c)
             # Recrear los círculos cuando cambia el compás
             self._recreate_lights()
+        except Exception:
+            pass
+
+    def _on_resize(self, event=None):
+        """Maneja el redimensionamiento del frame."""
+        try:
+            # Recalcular el factor de escala basado en el tamaño actual
+            if event and hasattr(event, 'width') and event.width > 1:
+                self._scale_factor = event.width / self._base_width
+                # Actualizar los tamaños de fuente dinámicamente
+                self._update_fonts()
+        except Exception:
+            pass
+
+    def _update_fonts(self):
+        """Actualiza los tamaños de fuente según el factor de escala."""
+        try:
+            title_size = max(12, int(20 * self._scale_factor))
+            bpm_size = max(24, int(40 * self._scale_factor))
+
+            self.title_label.config(font=("Arial", title_size, "bold"))
+            self.bpm_label.config(font=("Consolas", bpm_size, "bold"))
         except Exception:
             pass
 

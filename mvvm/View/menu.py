@@ -41,6 +41,14 @@ class MenuFrame(ttk.Frame):
         self.on_reproductor_clicked = on_reproductor_clicked
         self.on_chords_clicked = on_chords_clicked
 
+        # Variables para escalado responsivo
+        self._base_width = 1400
+        self._base_height = 600
+        self._scale_factor = 1.0
+
+        # Vincular evento de redimensionamiento
+        self.bind("<Configure>", self._on_resize)
+
         # Configurar estilo
         self.configure(style='Dark.TFrame')
 
@@ -54,32 +62,37 @@ class MenuFrame(ttk.Frame):
         style.configure('Dark.TFrame', background='#1a1a1a')
         style.configure('Welcome.TLabel', background='#1a1a1a', foreground='#ffffff',
                         font=('Arial', 24, 'bold'))
-        style.configure('MenuButton.TButton', font=('Arial', 12, 'bold'),
-                        width=15)
+        style.configure('MenuButton.TButton', font=('Arial', 12, 'bold'))
 
         # Frame principal con scroll vertical
-        main_frame = ttk.Frame(self, style='Dark.TFrame')
-        main_frame.pack(fill='both', expand=True, padx=20, pady=20)
+        self.main_frame = ttk.Frame(self, style='Dark.TFrame')
+        self.main_frame.pack(fill='both', expand=True, padx=20, pady=20)
 
         # Logo - Más grande
         logo_path = self._get_logo_path()
         if os.path.exists(logo_path):
-            self._add_logo(main_frame, logo_path)
+            self._add_logo(self.main_frame, logo_path)
 
-        # Descripción
-        description_label = ttk.Label(
-            main_frame,
+        # Descripción - Centrada horizontalmente
+        self.description_label = ttk.Label(
+            self.main_frame,
             text="Selecciona una función para comenzar",
             style='Welcome.TLabel',
             font=('Arial', 14)
         )
-        description_label.pack(pady=10)
+        self.description_label.pack(pady=10, expand=False)
 
-        # Frame para botones
-        buttons_frame = ttk.Frame(main_frame, style='Dark.TFrame')
-        buttons_frame.pack(pady=30)
+        # Frame para botones con expansión en ambos ejes
+        buttons_frame = ttk.Frame(self.main_frame, style='Dark.TFrame')
+        buttons_frame.pack(pady=30, fill='both', expand=True)
 
-        # Botones
+        # Configurar filas y columnas para expansión simétrica (2x2)
+        buttons_frame.rowconfigure(0, weight=1)
+        buttons_frame.rowconfigure(1, weight=1)
+        buttons_frame.columnconfigure(0, weight=1)
+        buttons_frame.columnconfigure(1, weight=1)
+
+        # Botones en cuadrícula 2x2
         self._create_button(
             buttons_frame,
             "🎸 Afinador",
@@ -96,15 +109,15 @@ class MenuFrame(ttk.Frame):
 
         self._create_button(
             buttons_frame,
-            "🎵 Reproductor",
-            self.on_reproductor_clicked,
-            row=0, column=2
+            "🎹 Acordes",
+            self.on_chords_clicked,
+            row=1, column=0
         )
 
         self._create_button(
             buttons_frame,
-            "🎼 Acordes",
-            self.on_chords_clicked,
+            "▶ Reproductor",
+            self.on_reproductor_clicked,
             row=1, column=1
         )
 
@@ -142,4 +155,23 @@ class MenuFrame(ttk.Frame):
             command=callback,
             style='MenuButton.TButton'
         )
-        button.grid(row=row, column=column, padx=15, pady=10)
+        button.grid(row=row, column=column, padx=15, pady=15, sticky='nsew')
+
+    def _on_resize(self, event=None):
+        """Maneja el redimensionamiento del frame."""
+        try:
+            if event and hasattr(event, 'width') and event.width > 1:
+                self._scale_factor = event.width / self._base_width
+                self._update_fonts()
+        except Exception:
+            pass
+
+    def _update_fonts(self):
+        """Actualiza los tamaños de fuente según el factor de escala."""
+        try:
+            title_size = max(16, int(24 * self._scale_factor))
+            description_size = max(12, int(14 * self._scale_factor))
+
+            self.description_label.config(font=('Arial', description_size))
+        except Exception:
+            pass

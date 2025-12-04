@@ -3,8 +3,9 @@ python-dotenv>=1.0.0
 pyrebase4>=4.7.1
 firebase-admin>=6.5.0
 sounddevice
-librosa
+librosa 
 numpy
-pygame
-pyaudio
+pygame  
+pyaudio 
 mutagen
+Pillow

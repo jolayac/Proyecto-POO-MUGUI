@@ -5,6 +5,12 @@ from tkinter import Canvas, Frame
 class TunerCalibratorFrame(Frame):
     def __init__(self, master=None):
         super().__init__(master, bg="#1a1a1a")
+
+        # Variables para escalado responsivo
+        self._base_width = 350
+        self._scale_factor = 1.0
+        self.bind("<Configure>", self._on_resize)
+
         self.freq_label = tk.Label(
             self, text="--- Hz", font=("Consolas", 26, "bold"), fg="#00ffff", bg="#1a1a1a")
         self.freq_label.pack(pady=15)
@@ -76,3 +82,30 @@ class TunerCalibratorFrame(Frame):
         x_offset = (cents / 50) * 180
         x_end = 230 + x_offset
         self.canvas.coords(self.needle, 230, 65, x_end, 65)
+
+    def _on_resize(self, event=None):
+        """Maneja el redimensionamiento del frame."""
+        try:
+            if event and hasattr(event, 'width') and event.width > 1:
+                self._scale_factor = event.width / self._base_width
+                self._update_fonts()
+        except Exception:
+            pass
+
+    def _update_fonts(self, scale_factor=None):
+        """Actualiza los tamaños de fuente según el factor de escala."""
+        try:
+            if scale_factor is not None:
+                self._scale_factor = scale_factor
+
+            freq_size = max(18, int(26 * self._scale_factor))
+            note_size = max(48, int(72 * self._scale_factor))
+            cents_size = max(16, int(22 * self._scale_factor))
+            status_size = max(8, int(11 * self._scale_factor))
+
+            self.freq_label.config(font=("Consolas", freq_size, "bold"))
+            self.note_label.config(font=("Arial", note_size, "bold"))
+            self.cents_label.config(font=("Arial", cents_size))
+            self.status_label.config(font=("Arial", status_size))
+        except Exception:
+            pass
