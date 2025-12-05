@@ -282,3 +282,8 @@ client_secret=TU_CLIENT_SECRET
 
 
 Con esto podrás utilizar las funciones de inicio de sesión y registro en la aplicación.
+
+---
+# Colaboradores 
+- Juan Sebastián Olaya Castañeda 
+- Juan Camilo Paez Guaspud 
