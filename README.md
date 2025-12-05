@@ -1,5 +1,10 @@
 # Video explicativo
+
 [Video MUGUI](https://youtu.be/2amNoKBj0Cw)
+
+# Manual de Backend
+
+[Manual de Backend](manual_backend_MUGUI.pdf)
 
 # MUGUI
 
