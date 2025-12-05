@@ -1,4 +1,7 @@
-# Manual de Usuario - MUGUI
+# Video explicativo
+[Video MUGUI](https://youtu.be/2amNoKBj0Cw)
+
+# MUGUI
 
 Esta aplicación te proporciona cuatro herramientas esenciales para practicar música:
 
