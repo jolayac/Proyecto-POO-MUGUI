@@ -26,7 +26,7 @@ Esta aplicación te proporciona cuatro herramientas esenciales para practicar m�
 
 3. **Iniciar la aplicación**
    ```bash
-   python definitivo.py
+   python MUGUI.py
    ```
 
 
@@ -184,7 +184,7 @@ pip install -r requirements.txt
 
 **4. Ejecutar:**
 ```bash
-python definitivo.py
+python MUGUI.py
 ```
 
 
@@ -192,7 +192,7 @@ python definitivo.py
 
 ```
 Proyecto-POO-MUGUI/
-├── definitivo.py              # Punto de entrada
+├── MUGUI.py              # Punto de entrada
 ├── MainApp.py                 # Orquestador principal
 ├── mvvm/
 │   ├── Model/                 # Lógica de negocio
